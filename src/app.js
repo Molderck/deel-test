@@ -134,4 +134,45 @@ app.get("/balances/deposit/:userId", getProfile, async (req, res) => {
   }
 });
 
+/**
+ *
+ * @returns profession that earned the most money for any contractor within the date ranges
+ */
+app.get(
+  "/admin/best-profession?start=<date>&end=<date>",
+  getProfile,
+  async (req, res) => {
+    try {
+      const { Contract, Job, Profile } = req.app.get("models");
+      const { start, end } = req.query;
+
+      /* Was going to apply the following query with Sequelize but ran out of time:
+
+    SELECT profession,
+    MAX(sumPrice) as maxSumPrice
+    FROM (
+    SELECT p.profession,
+      SUM(j.price) as sumPrice
+    FROM Profiles p
+      inner join Contracts c on p.id = c.ClientId
+      inner join Jobs j on j.id = c.id
+    where j.paid is true
+      and j.paymentDate BETWEEN '2020-08-15 19:11:26.737 +00:00' AND '2020-08-15 19:11:26.737 +00:00'
+    group by p.profession
+    order by sumPrice DESC
+    )   
+    */
+
+      const bestProfession = await Profile.findAll({
+        attributes: ["profession"],
+      });
+
+      if (!bestProfession.length) return res.status(204).end();
+      res.json(bestProfession);
+    } catch (error) {
+      return res.status(500).json({ message: error?.message });
+    }
+  }
+);
+
 module.exports = app;
