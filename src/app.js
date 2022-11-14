@@ -54,4 +54,35 @@ app.get("/contracts", getProfile, async (req, res) => {
   }
 });
 
+/**
+ *
+ * @returns all unpaid jobs for a client or contractor for active only contracts
+ */
+app.get("/jobs/unpaid", getProfile, async (req, res) => {
+  try {
+    const { Job, Contract } = req.app.get("models");
+    const profileId = req?.headers?.profile_id;
+
+    const unpaidJobs = await Job.findAll({
+      where: {
+        paid: null,
+      },
+      include: [
+        {
+          model: Contract,
+          where: {
+            [Op.not]: [{ status: "terminated" }],
+            [Op.or]: [{ ClientId: profileId }, { ContractorId: profileId }],
+          },
+        },
+      ],
+    });
+
+    if (!unpaidJobs.length) return res.status(204).end();
+    res.json(unpaidJobs);
+  } catch (error) {
+    return res.status(500).json({ message: error?.message });
+  }
+});
+
 module.exports = app;
