@@ -124,3 +124,19 @@ When you have finished the assignment, create a github repository and send us th
   
 
 Thank you and good luck! 🙏
+
+## Missing work:
+
+Greetings. Was really fun doing this home task. After 2 hours and 50 minutes the current code in master branch is what I could finish.
+The missing work was:
+- /jobs/:job_id/pay -> Logic and endpoint
+- /admin/best-profession?start=<date>&end=<date> -> Finished the SQL logic but didn't translate it into Sequelize
+- /admin/best-clients?start=<date>&end=<date>&limit=<integer> -> Logic and endpoint
+
+Would have loved to separate the endpoints into a /routes folder and create a file for each respective domain such as:
+- contracts
+- jobs
+- balances
+- admin
+
+For a better code organization.
