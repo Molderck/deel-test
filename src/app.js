@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { sequelize } = require("./model");
 const { getProfile } = require("./middleware/getProfile");
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 const app = express();
 
 app.use(bodyParser.json());
@@ -80,6 +80,55 @@ app.get("/jobs/unpaid", getProfile, async (req, res) => {
 
     if (!unpaidJobs.length) return res.status(204).end();
     res.json(unpaidJobs);
+  } catch (error) {
+    return res.status(500).json({ message: error?.message });
+  }
+});
+
+/**
+ *
+ * @returns deposit up to 25% to client
+ */
+app.get("/balances/deposit/:userId", getProfile, async (req, res) => {
+  try {
+    const { Contract, Job, Profile } = req.app.get("models");
+    const { userId } = req.params;
+    const TOTAL_JOBS_TO_PAY_PERCENTAGE_LIMIT = 0.25;
+
+    let possibleAmountToDeposit = await Contract.findAll({
+      where: {
+        ClientId: userId,
+      },
+      attributes: [],
+      include: [
+        {
+          model: Job,
+          where: {
+            paid: 1,
+          },
+          attributes: [
+            [sequelize.fn("sum", sequelize.col("price")), "priceTotal"],
+          ],
+        },
+      ],
+    });
+
+    possibleAmountToDeposit = Math.floor(
+      possibleAmountToDeposit[0].dataValues["Jobs"][0].dataValues.priceTotal *
+        TOTAL_JOBS_TO_PAY_PERCENTAGE_LIMIT
+    );
+
+    const clientPayment = await Profile.increment(
+      { balance: possibleAmountToDeposit },
+      {
+        where: {
+          id: userId,
+        },
+      }
+    );
+
+    if (!clientPayment.length) return res.status(204).end();
+    res.status(200).end();
   } catch (error) {
     return res.status(500).json({ message: error?.message });
   }
