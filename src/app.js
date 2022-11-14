@@ -10,7 +10,7 @@ app.set("sequelize", sequelize);
 app.set("models", sequelize.models);
 
 /**
- * FIX ME!
+ *
  * @returns contract by id
  */
 app.get("/contracts/:id", getProfile, async (req, res) => {
@@ -24,10 +24,34 @@ app.get("/contracts/:id", getProfile, async (req, res) => {
         [Op.or]: [{ ClientId: profileId }, { ContractorId: profileId }],
       },
     });
-    if (!contract) return res.status(404).end();
+    if (!contract.length) return res.status(204).end();
     res.json(contract);
   } catch (error) {
     return res.status(500).json({ message: error?.message });
   }
 });
+
+/**
+ *
+ * @returns All contracts that are non terminated and belong to a client or contractor
+ */
+app.get("/contracts", getProfile, async (req, res) => {
+  try {
+    const { Contract } = req.app.get("models");
+    const profileId = req?.headers?.profile_id;
+
+    const contracts = await Contract.findAll({
+      where: {
+        [Op.not]: [{ status: "terminated" }],
+        [Op.or]: [{ ClientId: profileId }, { ContractorId: profileId }],
+      },
+    });
+
+    if (!contracts.length) return res.status(204).end();
+    res.json(contracts);
+  } catch (error) {
+    return res.status(500).json({ message: error?.message });
+  }
+});
+
 module.exports = app;
